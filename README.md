@@ -20,7 +20,7 @@ go get -u github.com/tigerwill90/foxwaf
 - Customizable: Allows for custom security rules and configurations to suit specific use cases.
 
 ### Usage
-Here is an example to load OWASP CRS using [coraza-coreruleset](https://github.com/corazawaf/coraza-coreruleset).
+Here is an example to load [OWASP CRS](https://coreruleset.org/) using [coraza-coreruleset](https://github.com/corazawaf/coraza-coreruleset).
 ````go
 package main
 
