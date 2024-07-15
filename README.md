@@ -60,7 +60,7 @@ func main() {
 ````
 
 ````sh
-curl -sS -D - "http://localhost:8080/debug?path=../foo"
+curl -sS -D - "http://localhost:8080/hello/fox?path=../foo"
 # HTTP/1.1 403 Forbidden
 # Date: Mon, 15 Jul 2024 14:52:24 GMT
 # Content-Length: 0
