@@ -5,13 +5,11 @@
 // and the OWASP Coraza contributors). Mount of this source code is governed by an Apache-2.0 that can be found
 // at https://github.com/corazawaf/coraza/blob/main/LICENSE.
 
-package foxcoraza
+package foxwaf
 
 import (
-	"embed"
 	"fmt"
 	"github.com/corazawaf/coraza/v3"
-	"github.com/corazawaf/coraza/v3/debuglog"
 	"github.com/corazawaf/coraza/v3/experimental"
 	"github.com/corazawaf/coraza/v3/types"
 	"github.com/tigerwill90/fox"
@@ -29,37 +27,26 @@ var p = sync.Pool{
 	},
 }
 
-//go:embed coraza/*
-var coreRulesetFS embed.FS
-
+// Middleware creates a new Fox middleware function using the provided Coraza WAF instance.
+// It intercepts incoming requests and processes them through the WAF before passing them to the next handler.
 func Middleware(waf coraza.WAF) fox.MiddlewareFunc {
 	return NewWAF(waf).Intercept
 }
 
+// WAF struct holds the Coraza WAF instance.
 type WAF struct {
 	waf coraza.WAF
 }
 
-func NewCoreRulesetConfig(logger debuglog.Logger) coraza.WAFConfig {
-	cfg := coraza.NewWAFConfig().
-		WithDirectivesFromFile("coraza/coraza.conf").
-		WithDirectivesFromFile("coraza/coreruleset/crs-setup.conf.example").
-		WithDirectivesFromFile("coraza/coreruleset/rules/*.conf").
-		WithDebugLogger(debuglog.Default()).
-		WithRootFS(coreRulesetFS)
-
-	if logger != nil {
-		cfg = cfg.WithDebugLogger(logger)
-	}
-	return cfg
-}
-
+// NewWAF initializes a new WAF middleware with the given Coraza instance.
 func NewWAF(waf coraza.WAF) *WAF {
 	return &WAF{
 		waf: waf,
 	}
 }
 
+// Intercept is a middleware function that processes HTTP requests using Coraza WAF.
+// It creates a new transaction for each request, processes the request, and handles any interruptions or responses.
 func (w *WAF) Intercept(next fox.HandlerFunc) fox.HandlerFunc {
 	newTX := func(*http.Request) types.Transaction {
 		return w.waf.NewTransaction()

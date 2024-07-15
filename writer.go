@@ -5,7 +5,7 @@
 // and the OWASP Coraza contributors). Mount of this source code is governed by an Apache-2.0 that can be found
 // at https://github.com/corazawaf/coraza/blob/main/LICENSE.
 
-package foxcoraza
+package foxwaf
 
 import (
 	"bufio"
@@ -40,18 +40,17 @@ type rwInterceptor struct {
 	wroteHeader        bool
 }
 
-func (w *rwInterceptor) WriteString(s string) (n int, err error) {
-	return io.WriteString(onlyWrite{w}, s)
-}
-
+// Status recorded after Write and WriteHeader.
 func (w *rwInterceptor) Status() int {
 	return w.statusCode
 }
 
+// Written returns true if the response has been written.
 func (w *rwInterceptor) Written() bool {
 	return w.size != notWritten
 }
 
+// Size returns the size of the written response.
 func (w *rwInterceptor) Size() int {
 	if w.size < 0 {
 		return 0
@@ -132,6 +131,15 @@ func (w *rwInterceptor) Write(b []byte) (int, error) {
 	return n, err
 }
 
+// WriteString writes the provided string to the underlying connection
+// as part of an HTTP reply. The method returns the number of bytes written
+// and an error, if any.
+func (w *rwInterceptor) WriteString(s string) (n int, err error) {
+	return io.WriteString(onlyWrite{w}, s)
+}
+
+// ReadFrom reads data from src until EOF or error. The return value n is the number of bytes read.
+// Any error except EOF encountered during the read is also returned.
 func (w *rwInterceptor) ReadFrom(src io.Reader) (n int64, err error) {
 	bufp := copyBufPool.Get().(*[]byte)
 	buf := *bufp
@@ -141,6 +149,7 @@ func (w *rwInterceptor) ReadFrom(src io.Reader) (n int64, err error) {
 	return
 }
 
+// FlushError flushes buffered data to the client.
 func (w *rwInterceptor) FlushError() error {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
@@ -148,10 +157,14 @@ func (w *rwInterceptor) FlushError() error {
 	return nil
 }
 
+// Push initiates an HTTP/2 server push. Push returns http.ErrNotSupported if the client has disabled push or if push
+// is not supported on the underlying connection. See http.Pusher for more details.
 func (w *rwInterceptor) Push(target string, opts *http.PushOptions) error {
 	return w.w.Push(target, opts)
 }
 
+// Hijack lets the caller take over the connection. If hijacking the connection is not supported, Hijack returns
+// an error matching http.ErrNotSupported. See http.Hijacker for more details.
 func (w *rwInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return w.w.Hijack()
 }
