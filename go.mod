@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/corazawaf/coraza/v3 v3.2.1
-	github.com/tigerwill90/fox v0.14.0
+	github.com/tigerwill90/fox v0.15.0
 )
 
 require (
