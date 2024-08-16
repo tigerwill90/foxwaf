@@ -264,7 +264,7 @@ func relevantCaller() runtime.Frame {
 	var frame runtime.Frame
 	for {
 		f, more := frames.Next()
-		if !strings.HasPrefix(f.Function, "github.com/tigerwill90/foxcoraza.") {
+		if !strings.HasPrefix(f.Function, "github.com/tigerwill90/foxwaf.") {
 			return f
 		}
 		if !more {
