@@ -1,3 +1,7 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/tigerwill90/foxwaf.svg)](https://pkg.go.dev/github.com/tigerwill90/foxwaf)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tigerwill90/foxwaf)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/tigerwill90/foxwaf)
+
 # FoxWAF
 
 FoxWAF is a middleware for the [Fox](https://github.com/tigerwill90/fox) router that integrates the 

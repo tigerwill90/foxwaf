@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"path"
 	"sync"
+	"time"
 )
 
 var _ fox.ResponseWriter = (*rwInterceptor)(nil)
@@ -171,6 +172,22 @@ func (w *rwInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 func (w *rwInterceptor) Header() http.Header {
 	return w.w.Header()
+}
+
+// SetReadDeadline sets the deadline for reading the entire request, including the body. Reads from the request
+// body after the deadline has been exceeded will return an error. A zero value means no deadline. Setting the read
+// deadline after it has been exceeded will not extend it. If SetReadDeadline is not supported, it returns
+// an error matching http.ErrNotSupported.
+func (w *rwInterceptor) SetReadDeadline(deadline time.Time) error {
+	return w.w.SetReadDeadline(deadline)
+}
+
+// SetWriteDeadline sets the deadline for writing the response. Writes to the response body after the deadline has
+// been exceeded will not block, but may succeed if the data has been buffered. A zero value means no deadline.
+// Setting the write deadline after it has been exceeded will not extend it. If SetWriteDeadline is not supported,
+// it returns an error matching http.ErrNotSupported.
+func (w *rwInterceptor) SetWriteDeadline(deadline time.Time) error {
+	return w.w.SetWriteDeadline(deadline)
 }
 
 func (w *rwInterceptor) reset(tx types.Transaction, writer fox.ResponseWriter, proto string) {
