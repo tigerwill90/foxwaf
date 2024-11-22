@@ -38,7 +38,7 @@ type WAF struct {
 	waf coraza.WAF
 }
 
-// NewWAF initializes a new WAF middleware with the given Coraza instance.
+// NewWAF initializes a new [WAF] middleware with the given Coraza instance.
 func NewWAF(waf coraza.WAF) *WAF {
 	return &WAF{
 		waf: waf,
