@@ -190,6 +190,10 @@ func (w *rwInterceptor) SetWriteDeadline(deadline time.Time) error {
 	return w.w.SetWriteDeadline(deadline)
 }
 
+func (w *rwInterceptor) EnableFullDuplex() error {
+	return fox.ErrNotSupported()
+}
+
 func (w *rwInterceptor) reset(tx types.Transaction, writer fox.ResponseWriter, proto string) {
 	w.w = writer
 	w.tx = tx
