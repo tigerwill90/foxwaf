@@ -29,14 +29,14 @@ Here is an example to load [OWASP CRS](https://coreruleset.org/) using [coraza-c
 package main
 
 import (
+	"errors"
 	coreruleset "github.com/corazawaf/coraza-coreruleset/v4"
 	"github.com/corazawaf/coraza/v3"
 	"github.com/tigerwill90/fox"
 	"github.com/tigerwill90/foxwaf"
+	"log"
 	"net/http"
 )
-
-
 
 func main() {
 
@@ -47,19 +47,26 @@ func main() {
 		WithDirectives("SecRuleEngine On").
 		WithRootFS(coreruleset.FS)
 
-	waf, _ := coraza.NewWAF(cfg)
+	waf, err := coraza.NewWAF(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-	f := fox.New(
+	f, err := fox.New(
 		fox.DefaultOptions(),
 		fox.WithMiddleware(foxwaf.Middleware(waf)),
 	)
-	
+	if err != nil {
+		panic(err)
+	}
+
 	f.MustHandle(http.MethodGet, "/hello/{name}", func(c fox.Context) {
 		_ = c.String(http.StatusOK, "Hello, %s", c.Param("name"))
 	})
 
-
-	_ = http.ListenAndServe(":8080", f)
+	if err = http.ListenAndServe(":8080", f); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalln(err)
+	}
 }
 ````
 
