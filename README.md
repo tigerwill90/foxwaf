@@ -4,7 +4,7 @@
 
 # FoxWAF
 
-FoxWAF is a middleware for the [Fox](https://github.com/tigerwill90/fox) router that integrates the 
+FoxWAF is an **experimental** middleware for the [Fox](https://github.com/tigerwill90/fox) router that integrates the 
 [Coraza Web Application Firewall (WAF)](https://coraza.io/) to enhance the security of your web applications by intercepting 
 and analyzing HTTP requests and responses.
 
