@@ -28,31 +28,13 @@ var p = sync.Pool{
 }
 
 // Middleware creates a new Fox middleware function using the provided Coraza WAF instance.
-// It intercepts incoming requests and processes them through the WAF before passing them to the next handler.
+// It intercepts incoming requests and processes them through  coraza.WAF before passing them to the next handler.
 func Middleware(waf coraza.WAF) fox.MiddlewareFunc {
-	return NewWAF(waf).Intercept
-}
-
-// WAF struct holds the Coraza WAF instance.
-type WAF struct {
-	waf coraza.WAF
-}
-
-// NewWAF initializes a new [WAF] middleware with the given Coraza instance.
-func NewWAF(waf coraza.WAF) *WAF {
-	return &WAF{
-		waf: waf,
-	}
-}
-
-// Intercept is a middleware function that processes HTTP requests using Coraza WAF.
-// It creates a new transaction for each request, processes the request, and handles any interruptions or responses.
-func (w *WAF) Intercept(next fox.HandlerFunc) fox.HandlerFunc {
+	w := waf
 	newTX := func(*http.Request) types.Transaction {
-		return w.waf.NewTransaction()
+		return w.NewTransaction()
 	}
-
-	if ctxwaf, ok := w.waf.(experimental.WAFWithOptions); ok {
+	if ctxwaf, ok := w.(experimental.WAFWithOptions); ok {
 		newTX = func(r *http.Request) types.Transaction {
 			return ctxwaf.NewTransactionWithOptions(experimental.Options{
 				Context: r.Context(),
@@ -60,47 +42,49 @@ func (w *WAF) Intercept(next fox.HandlerFunc) fox.HandlerFunc {
 		}
 	}
 
-	return func(c fox.Context) {
-		req := c.Request()
-		tx := newTX(req)
-		defer func() {
-			// We run phase 5 rules and create audit logs (if enabled)
-			tx.ProcessLogging()
-			// we remove temporary files and free some memory
-			if err := tx.Close(); err != nil {
-				tx.DebugLogger().Error().Err(err).Msg("Failed to close the transaction")
+	return func(next fox.HandlerFunc) fox.HandlerFunc {
+		return func(c fox.Context) {
+			req := c.Request()
+			tx := newTX(req)
+			defer func() {
+				// We run phase 5 rules and create audit logs (if enabled)
+				tx.ProcessLogging()
+				// we remove temporary files and free some memory
+				if err := tx.Close(); err != nil {
+					tx.DebugLogger().Error().Err(err).Msg("Failed to close the transaction")
+				}
+			}()
+
+			// Early return, Coraza is not going to process any rule
+			if tx.IsRuleEngineOff() {
+				next(c)
+				return
 			}
-		}()
 
-		// Early return, Coraza is not going to process any rule
-		if tx.IsRuleEngineOff() {
-			next(c)
-			return
-		}
+			// ProcessRequest is just a wrapper around ProcessConnection, ProcessURI,
+			// ProcessRequestHeaders and ProcessRequestBody.
+			// It fails if any of these functions returns an error and it stops on interruption.
+			if it, err := processRequest(tx, req); err != nil {
+				tx.DebugLogger().Error().Err(err).Msg("Failed to process request")
+				return
+			} else if it != nil {
+				c.Writer().WriteHeader(obtainStatusCodeFromInterruptionOrDefault(it, http.StatusOK))
+				return
+			}
 
-		// ProcessRequest is just a wrapper around ProcessConnection, ProcessURI,
-		// ProcessRequestHeaders and ProcessRequestBody.
-		// It fails if any of these functions returns an error and it stops on interruption.
-		if it, err := processRequest(tx, req); err != nil {
-			tx.DebugLogger().Error().Err(err).Msg("Failed to process request")
-			return
-		} else if it != nil {
-			c.Writer().WriteHeader(obtainStatusCodeFromInterruptionOrDefault(it, http.StatusOK))
-			return
-		}
+			interceptor := p.Get().(*rwInterceptor)
+			defer p.Put(interceptor)
 
-		interceptor := p.Get().(*rwInterceptor)
-		defer p.Put(interceptor)
+			interceptor.reset(tx, c.Writer(), req.Proto)
+			cc := c.CloneWith(interceptor, req)
+			defer cc.Close()
 
-		interceptor.reset(tx, c.Writer(), req.Proto)
-		cc := c.CloneWith(interceptor, req)
-		defer cc.Close()
+			next(cc)
 
-		next(cc)
-
-		if err := processResponse(tx, interceptor); err != nil {
-			tx.DebugLogger().Error().Err(err).Msg("Failed to close the response")
-			return
+			if err := processResponse(tx, interceptor); err != nil {
+				tx.DebugLogger().Error().Err(err).Msg("Failed to close the response")
+				return
+			}
 		}
 	}
 }

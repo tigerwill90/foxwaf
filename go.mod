@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/corazawaf/coraza/v3 v3.3.3
-	github.com/tigerwill90/fox v0.23.0
+	github.com/tigerwill90/fox v0.23.1
 )
 
 require (
