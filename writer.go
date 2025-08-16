@@ -9,8 +9,6 @@ package foxwaf
 
 import (
 	"bufio"
-	"github.com/corazawaf/coraza/v3/types"
-	"github.com/tigerwill90/fox"
 	"io"
 	"log"
 	"net"
@@ -18,6 +16,9 @@ import (
 	"path"
 	"sync"
 	"time"
+
+	"github.com/corazawaf/coraza/v3/types"
+	"github.com/tigerwill90/fox"
 )
 
 var _ fox.ResponseWriter = (*rwInterceptor)(nil)

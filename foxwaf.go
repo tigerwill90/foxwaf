@@ -9,16 +9,17 @@ package foxwaf
 
 import (
 	"fmt"
-	"github.com/corazawaf/coraza/v3"
-	"github.com/corazawaf/coraza/v3/experimental"
-	"github.com/corazawaf/coraza/v3/types"
-	"github.com/tigerwill90/fox"
 	"io"
 	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/corazawaf/coraza/v3"
+	"github.com/corazawaf/coraza/v3/experimental"
+	"github.com/corazawaf/coraza/v3/types"
+	"github.com/tigerwill90/fox"
 )
 
 var p = sync.Pool{
